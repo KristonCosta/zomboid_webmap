@@ -1,7 +1,10 @@
 use crate::{Config, ZomboidWebMapError};
 use rusqlite::Connection;
 use serde::Serialize;
-use std::path::PathBuf;
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 #[derive(Clone)]
 pub struct World {
@@ -12,14 +15,9 @@ pub struct World {
 impl World {
     pub fn new(config: &Config) -> Self {
         let name = config.world_name.clone();
-        World {
-            root: config.server_directory.path_to(&Self::relative_path(&name)),
-            name,
-        }
-    }
-
-    fn relative_path(name: &str) -> String {
-        format!("{}{}", "Saves\\Multiplayer\\", name)
+        let relative = PathBuf::from("Saves/Multiplayer").join(&name);
+        let root = config.server_directory.join(&relative);
+        World { root, name }
     }
 
     pub fn load_players(&mut self) -> Result<Vec<Player>, ZomboidWebMapError> {

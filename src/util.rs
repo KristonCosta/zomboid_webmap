@@ -5,7 +5,7 @@ pub struct Directory {
 }
 
 impl Directory {
-    pub fn new(path: String) -> Self {
+    pub fn new(path: &str) -> Self {
         let buf = PathBuf::from(&path);
         if !buf.is_dir() {
             panic!("Invalid directory path: {}", path);
@@ -13,7 +13,7 @@ impl Directory {
         Self { buf }
     }
 
-    pub fn path_to(&self, dest: &str) -> PathBuf {
+    pub fn join(&self, dest: &PathBuf) -> PathBuf {
         self.buf.join(dest)
     }
 }

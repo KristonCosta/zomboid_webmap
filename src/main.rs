@@ -1,26 +1,23 @@
 use crate::util::Directory;
 use crate::zomboid::World;
 use futures_util::{SinkExt, StreamExt};
-use serde::Serialize;
+use structopt::StructOpt;
 use tokio::time;
-use warp::{
-    hyper::{client::conn, header::REFERER},
-    ws::WebSocket,
-    Filter,
-};
+use warp::{ws::WebSocket, Filter};
 
-use std::{
-    sync::{
-        mpsc::{channel, SendError, Sender},
-        Arc,
-    },
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 mod util;
 mod zomboid;
 
 static REFRESH_DELAY_SECONDS: u64 = 5;
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "webmap")]
+struct Opt {
+    #[structopt(short, long)]
+    world_name: String,
+}
 
 #[derive(Debug)]
 pub enum ZomboidWebMapError {
@@ -41,9 +38,13 @@ pub struct Config {
 
 #[tokio::main]
 async fn main() {
+    let opt = Opt::from_args();
+    let server_directory = dirs::home_dir()
+        .expect("Couldn't get home directory.")
+        .join("Zomboid");
     let config = Config {
-        server_directory: Directory::new("C:\\Users\\krist\\Zomboid".to_string()),
-        world_name: "RipSmokeys".to_string(),
+        server_directory: Directory::new(server_directory.to_str().unwrap()),
+        world_name: opt.world_name,
     };
 
     let world = Arc::new(World::new(&config));
