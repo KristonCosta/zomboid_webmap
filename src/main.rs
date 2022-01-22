@@ -39,9 +39,11 @@ pub struct Config {
 #[tokio::main]
 async fn main() {
     let opt = Opt::from_args();
+
     let server_directory = dirs::home_dir()
         .expect("Couldn't get home directory.")
         .join("Zomboid");
+
     let config = Config {
         server_directory: Directory::new(server_directory.to_str().unwrap()),
         world_name: opt.world_name,

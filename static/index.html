@@ -1,47 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" style='height: 100%; width: 100%;'>
-    <body style='margin: 0; height: 100%; width: 100%; overflow: hidden;'>
-        <object id="map-div" type="image/svg+xml" data="resources/map.svg" style="width: 100%; height: 100%; border:1px solid black;" />
-        <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0/dist/svg.min.js"></script>
-        <script src="https://bumbu.me/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
-        <script type="text/javascript">
-        const chat = document.getElementById('chat');
-        const text = document.getElementById('text');
-        const uri = 'ws://' + location.host + '/connect';
-        const ws = new WebSocket(uri);
-        const svgns = "http://www.w3.org/2000/svg";
-        ws.onopen = function() {
-            console.log("Connected!");
-        };
-        ws.onmessage = function(msg) {
-            console.log("Received data!");
-            let players = JSON.parse(msg.data);
-            let svgDom = document.querySelector('#map-div').getSVGDocument();
-            for (const player of players) {
-                var rect = document.createElementNS( svgns,'rect' );
-                rect.setAttributeNS( null,'x',player.position.x - 12.0 );
-                rect.setAttributeNS( null,'y',player.position.y - 12.0);
-                rect.setAttributeNS( null,'width','25.0' );
-                rect.setAttributeNS( null,'height','25.0' );
-                rect.setAttributeNS( null,'fill','#8e44ad');
-                svgDom.documentElement.children[0].appendChild( rect );
-                console.log(player);
-            }
-        };
-        
-        ws.onclose = function() {
-            chat.getElementsByTagName('em')[0].innerText = 'Disconnected!';
-        };
 
-        window.addEventListener('load', function (){
-            svgPanZoom('#map-div', {
-                zoomEnabled: true,
-                maxZoom: 50, 
-                zoomScaleSensitivity: 0.3,
-            });
-        });
-        </script>
-        
-        <div id="like_button_container"></div>
-    </body>
+<body style='margin: 0; height: 100%; width: 100%; overflow: hidden;'>
+    <script src="https://bumbu.me/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <object id="map-div" type="image/svg+xml" data="resources/map.svg"
+        style="width: 100%; height: 100%; border:1px solid black;"></object>
+
+    <script type="module" src="main.js"></script>
+</body>
+
 </html>

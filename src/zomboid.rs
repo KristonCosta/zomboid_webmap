@@ -40,7 +40,7 @@ impl Position {
 
 #[derive(Debug, Serialize)]
 pub struct Player {
-    username: String,
+    character_name: String,
     name: String,
     position: Position,
 }
@@ -56,8 +56,8 @@ impl Player {
         )?;
         let players = stmt.query_map([], |row| {
             Ok(Player {
-                username: row.get(0)?,
-                name: row.get(1)?,
+                name: row.get(0)?,
+                character_name: row.get(1)?,
                 position: Position::from_str(row.get(2)?, row.get(3)?, row.get(4)?),
             })
         })?;
