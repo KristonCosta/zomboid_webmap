@@ -1,9 +1,11 @@
 use crate::util::Directory;
 use crate::zomboid::World;
+use arc_swap::{ArcSwap, ArcSwapAny};
 use futures_util::{SinkExt, StreamExt};
 use structopt::StructOpt;
 use tokio::time;
 use warp::{ws::WebSocket, Filter};
+use zomboid::State;
 
 use std::{sync::Arc, time::Duration};
 
@@ -49,13 +51,24 @@ async fn main() {
         world_name: opt.world_name,
     };
 
-    let world = Arc::new(World::new(&config));
-    let world = warp::any().map(move || world.clone());
+    // let world = Arc::new(World::new(&config));
+    let state = Arc::new(ArcSwap::from(Arc::new(State::new(&config))));
+    let mut interval = time::interval(Duration::from_secs(REFRESH_DELAY_SECONDS));
 
+    let inner_state = state.clone();
+    tokio::task::spawn(async move {
+        loop {
+            interval.tick().await;
+            let state = Arc::new(State::new(&config));
+            inner_state.store(state);
+        }
+    });
+
+    let state = warp::any().map(move || state.clone());
     let socket = warp::path("connect")
         .and(warp::ws())
-        .and(world)
-        .map(|ws: warp::ws::Ws, world| ws.on_upgrade(move |socket| connected(socket, world)));
+        .and(state)
+        .map(|ws: warp::ws::Ws, state| ws.on_upgrade(move |socket| connected(socket, state)));
 
     let index = warp::path::end()
         .and(warp::get())
@@ -66,14 +79,14 @@ async fn main() {
     warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
 }
 
-async fn connected(ws: WebSocket, world: Arc<World>) {
-    let mut world = (*world).clone();
+async fn connected(ws: WebSocket, world: Arc<ArcSwapAny<Arc<State>>>) {
     let (mut ws_tx, ws_rx) = ws.split();
     let mut interval = time::interval(Duration::from_secs(REFRESH_DELAY_SECONDS));
     tokio::task::spawn(async move {
         loop {
             interval.tick().await;
-            let message = serde_json::to_string(&world.load_players().unwrap()).unwrap();
+            let world = (*world).load();
+            let message = serde_json::to_string(&world.players()).unwrap();
             match ws_tx.send(warp::ws::Message::text(message)).await {
                 Err(_) => {
                     println!("User disconnected!");

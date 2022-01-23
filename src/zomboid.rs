@@ -7,6 +7,24 @@ use std::{
 };
 
 #[derive(Clone)]
+pub struct State {
+    world: World,
+    players: Vec<Player>,
+}
+
+impl State {
+    pub fn new(config: &Config) -> Self {
+        let world = World::new(config);
+        let players = world.load_players().unwrap();
+        Self { world, players }
+    }
+
+    pub fn players(&self) -> &Vec<Player> {
+        &self.players
+    }
+}
+
+#[derive(Clone)]
 pub struct World {
     name: String,
     root: PathBuf,
@@ -20,12 +38,12 @@ impl World {
         World { root, name }
     }
 
-    pub fn load_players(&mut self) -> Result<Vec<Player>, ZomboidWebMapError> {
+    pub fn load_players(&self) -> Result<Vec<Player>, ZomboidWebMapError> {
         Player::load(&self)
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Position {
     x: f32,
     y: f32,
@@ -38,7 +56,7 @@ impl Position {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Player {
     character_name: String,
     name: String,
