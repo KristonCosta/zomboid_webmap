@@ -1,5 +1,4 @@
 use crate::util::Directory;
-use crate::zomboid::World;
 use arc_swap::{ArcSwap, ArcSwapAny};
 use futures_util::{SinkExt, StreamExt};
 use structopt::StructOpt;
@@ -51,7 +50,6 @@ async fn main() {
         world_name: opt.world_name,
     };
 
-    // let world = Arc::new(World::new(&config));
     let state = Arc::new(ArcSwap::from(Arc::new(State::new(&config))));
     let mut interval = time::interval(Duration::from_secs(REFRESH_DELAY_SECONDS));
 
@@ -80,7 +78,7 @@ async fn main() {
 }
 
 async fn connected(ws: WebSocket, world: Arc<ArcSwapAny<Arc<State>>>) {
-    let (mut ws_tx, ws_rx) = ws.split();
+    let (mut ws_tx, _) = ws.split();
     let mut interval = time::interval(Duration::from_secs(REFRESH_DELAY_SECONDS));
     tokio::task::spawn(async move {
         loop {

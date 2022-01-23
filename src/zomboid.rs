@@ -1,10 +1,7 @@
 use crate::{Config, ZomboidWebMapError};
 use rusqlite::Connection;
 use serde::Serialize;
-use std::{
-    path::{Path, PathBuf},
-    str::FromStr,
-};
+use std::path::PathBuf;
 
 #[derive(Clone)]
 pub struct State {
