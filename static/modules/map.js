@@ -77,6 +77,7 @@ function MapRenderer(svg) {
             position
         } = player;
         const marker = self.players[name].marker;
+        self.players[name].position = position;
         marker.setAttribute('cx', position.x);
         marker.setAttribute('cy', position.y);
         //  console.log("Updated marker for player ", name);

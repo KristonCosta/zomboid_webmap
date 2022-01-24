@@ -1,42 +1,40 @@
-use crate::{Config, ZomboidWebMapError};
-use rusqlite::Connection;
-use serde::Serialize;
-use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, time::Instant};
 
-#[derive(Clone)]
+#[derive(Clone, Debug, Deserialize)]
+pub struct PlayerDTO {
+    x: f32,
+    y: f32,
+    username: String,
+    forename: String,
+    surname: String,
+}
+
+#[derive(Clone, Debug)]
 pub struct State {
-    world: World,
-    players: Vec<Player>,
+    players: HashMap<String, Player>,
 }
 
 impl State {
-    pub fn new(config: &Config) -> Self {
-        let world = World::new(config);
-        let players = world.load_players().unwrap();
-        Self { world, players }
+    pub fn new() -> Self {
+        let players = HashMap::new();
+        Self { players }
     }
 
-    pub fn players(&self) -> &Vec<Player> {
+    pub fn from(state: &State) -> Self {
+        Self {
+            players: state.players.clone(),
+        }
+    }
+
+    pub fn players(&self) -> &HashMap<String, Player> {
         &self.players
     }
-}
 
-#[derive(Clone)]
-pub struct World {
-    name: String,
-    root: PathBuf,
-}
-
-impl World {
-    pub fn new(config: &Config) -> Self {
-        let name = config.world_name.clone();
-        let relative = PathBuf::from("Saves/Multiplayer").join(&name);
-        let root = config.server_directory.join(&relative);
-        World { root, name }
-    }
-
-    pub fn load_players(&self) -> Result<Vec<Player>, ZomboidWebMapError> {
-        Player::load(&self)
+    pub fn update_player(&mut self, player: &PlayerDTO) {
+        let name = player.username.clone();
+        let player = Player::from_dto(player);
+        self.players.insert(name, player);
     }
 }
 
@@ -44,12 +42,11 @@ impl World {
 pub struct Position {
     x: f32,
     y: f32,
-    z: f32,
 }
 
 impl Position {
-    pub fn from_str(x: f32, y: f32, z: f32) -> Self {
-        Self { x, y, z }
+    pub fn new(x: f32, y: f32) -> Self {
+        Self { x, y }
     }
 }
 
@@ -58,27 +55,20 @@ pub struct Player {
     character_name: String,
     name: String,
     position: Position,
+    #[serde(skip_serializing)]
+    last_updated_at: Instant,
 }
 
 impl Player {
-    pub fn load(world: &World) -> Result<Vec<Self>, ZomboidWebMapError> {
-        let conn = Connection::open(world.root.join("players.db"))?;
-        let mut stmt = conn.prepare(
-            r#"
-        select username, name, x, y, z
-        from networkPlayers;
-            "#,
-        )?;
-        let players = stmt.query_map([], |row| {
-            Ok(Player {
-                name: row.get(0)?,
-                character_name: row.get(1)?,
-                position: Position::from_str(row.get(2)?, row.get(3)?, row.get(4)?),
-            })
-        })?;
-        Ok(players
-            .into_iter()
-            .map(|x| x.unwrap())
-            .collect::<Vec<Self>>())
+    pub fn from_dto(player: &PlayerDTO) -> Self {
+        let last_updated_at = Instant::now();
+        let position = Position::new(player.x, player.y);
+        let name = format!("{} {}", player.forename, player.surname);
+        Self {
+            position,
+            name: player.username.clone(),
+            character_name: name,
+            last_updated_at,
+        }
     }
 }
